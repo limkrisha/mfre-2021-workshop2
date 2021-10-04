@@ -1,0 +1,194 @@
+---
+title: "Animated Graphs"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Load packages
+```{r, message = F, warning = F}
+# Load packages
+pacman::p_load(tidyverse, lubridate, ggthemes, ggrepel, cansim, janitor, gganimate)
+```
+
+Access Statistics Canada data
+```{r, message = F, warning = F}
+gdp_can_sample <- get_cansim(36100222) %>% filter(GEO == "Canada" & REF_DATE == 2019) %>%
+  select(REF_DATE, VALUE, Prices, Estimates)
+
+gdp <- get_cansim(36100222) %>% normalize_cansim_values() 
+
+glimpse(gdp)
+```
+
+Create function to create new variable called `geo_short` 
+
+```{r, message = F, warning = F}
+provlist <- c("British Columbia","Alberta","Saskatchewan","Manitoba","Ontario",
+              "Quebec", "New Brunswick","Nova Scotia","Prince Edward Island",
+              "Newfoundland and Labrador")
+
+short_provs <- function(df){
+  df <- df %>%
+    filter(GEO %in% provlist) %>%
+    mutate(geo_short = case_when(
+      GEO=="British Columbia" ~ "BC",
+      GEO=="Alberta" ~ "AB",
+      GEO=="Saskatchewan" ~ "SK",
+      GEO=="Manitoba" ~ "MB",
+      GEO=="Ontario" ~ "ON",
+      GEO=="Quebec" ~ "QC",
+      GEO=="New Brunswick" ~ "NB",
+      GEO=="Prince Edward Island" ~ "PE",
+      GEO=="Nova Scotia" ~ "NS",
+      GEO=="Newfoundland and Labrador" ~ "NL"
+    ))
+  
+  df$geo_short <- factor(df$geo_short,
+                         levels=c("BC","AB","SK","MB","ON",
+                                  "QC","NB","PE","NS","NL"))
+  
+  df
+}
+```
+
+Do some data cleaning
+
+```{r, message = F, warning = F}
+df_gdp <- gdp %>%
+  mutate(year=as.integer(REF_DATE)) %>% 
+  filter(GEO %in% provlist,
+         Prices=="Chained (2012) dollars",
+         Estimates=="Gross domestic product at market prices") %>%
+  select(GEO, year, gdp = VALUE)
+
+df_gdp <- short_provs(df_gdp) %>%
+  clean_names()
+  
+head(df_gdp)
+```
+
+Let's start plotting!
+```{r, message = F, warning = F}
+plot_gdp <- ggplot(df_gdp, aes(geo_short, gdp/1e9, fill = geo_short, label = geo_short)) +
+  geom_col()
+
+plot_gdp
+```
+Let's add some additional details
+
+```{r, message = F, warning = F}
+plot_gdp <- plot_gdp +
+  geom_text(vjust = -0.1) +
+  scale_fill_viridis_d() +
+  scale_y_continuous(labels=scales::dollar) + 
+  theme_tufte(base_size = 12) +
+  theme(legend.position = "none",
+        axis.text.x = element_blank(),
+        axis.ticks = element_blank()) +
+  labs(title = "Year: {frame_time}", x = "", y = "GDP (2012$ billions)")
+
+plot_gdp
+```
+
+Let's add some animation
+
+```{r, message = F, warning = F}
+plot_gdp + 
+  transition_time(year)
+```
+
+If you want a static graph
+
+```{r, message = F, warning = F}
+df_gdp %>% #<<
+  group_by(geo_short) %>%  #<<
+  summarize(gdp_plot = mean(gdp/1e9)) %>% 
+  ggplot(aes(geo_short, gdp_plot, fill = geo_short, label = geo_short)) +
+  geom_col() +
+  geom_text(vjust = -0.1, size = 3) +
+  scale_fill_viridis_d() +
+  scale_y_continuous(labels=scales::dollar) + 
+  theme_tufte(base_size = 10) +
+  theme(legend.position = "none",
+        axis.text.x = element_blank(),
+        axis.ticks = element_blank()) +
+  labs(title = "Average GDP by province", x = "", y = "GDP (2012$ billions)")
+```
+
+But provinces have different sizes, so let's do GDP / capita instead
+
+```{r, message = F, warning = F}
+pop <- get_cansim(1710000501) %>% normalize_cansim_values()
+
+df_pop <- pop %>%
+  mutate(year = as.integer(REF_DATE)) %>%
+  filter(GEO %in% provlist,
+         Sex=="Both sexes",
+         `Age group`=="All ages") %>%
+  dplyr::select(GEO, year, pop=VALUE) %>%
+  clean_names()
+
+df_gdpcap <-left_join(df_gdp,df_pop, by=c("year","geo")) %>%
+  mutate(gdpcap=gdp/pop) 
+```
+
+Let's graph GDP/capita
+
+```{r, message = F, warning = F}
+p_gdpcap <- ggplot(df_gdpcap, aes(geo_short, gdpcap, 
+                                  fill = geo_short, label = geo_short)) +
+  geom_col() + 
+  geom_text(vjust = -0.1, check_overlap = T) +
+  scale_fill_viridis_d(name="") +
+  scale_y_continuous(labels=scales::dollar) + 
+  theme_tufte(base_size = 12) +
+  theme(legend.position = "none",
+        axis.text.x = element_blank(),
+        axis.ticks = element_blank()) +
+  labs(title = 'Year: {frame_time}', x = '', y = 'GDP per capita ($2012)') +
+  transition_time(year) +
+  ease_aes('linear')  
+
+animate(p_gdpcap, fps=5, end_pause = 30)
+```
+
+Let's make it extra cool. What if we get the provinces to rank themselves every single frame? Let's first create a ranking variable.
+
+```{r, message = F, warning = F}
+df_ordered <- df_gdpcap %>%
+  group_by(year) %>%
+  mutate(prov_order = rank(gdpcap))
+```
+
+Let's plot it now. Use `geom_tile` instead of `geom_col` because it works better with the frame transitions
+
+```{r, message = F, warning = F}
+p_rank <- ggplot(df_ordered,
+                        aes(prov_order, group = geo_short, color= geo_short, fill=geo_short)) +
+  geom_tile(aes(y = gdpcap/2, 
+                height = gdpcap,
+                width = 0.9), alpha = 0.9) +
+  # text on top of bars
+  geom_text(aes(y = gdpcap, label = geo_short), hjust = -0.4) +
+  # text in x-axis (requires clip = "off" in coord_cartesian)
+  geom_text(aes(y = 0, label = geo_short), hjust = 1.4) +
+  coord_flip(clip = "off", expand = FALSE) +
+  scale_color_viridis_d(name="")+
+  scale_fill_viridis_d(name="")+
+  scale_y_continuous(labels=scales::dollar)+
+  theme_tufte(14)+
+  guides(color=F,fill=F)+
+  labs(title='{frame_time}', x = "",y="GDP per capita ($2012)") +
+  theme(plot.title = element_text(hjust = 1, size = 22),
+        axis.ticks.y = element_blank(),
+        axis.text.y  = element_blank()) + 
+  transition_time(year)+
+  ease_aes('cubic-in-out')
+
+animate(p_rank, nframes = 100, fps = 5, end_pause = 20) 
+```
+
+
