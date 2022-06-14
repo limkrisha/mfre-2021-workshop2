@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>MFRE Data Analytics</title>
+    <meta charset="utf-8" />
+    <script src="libs/header-attrs/header-attrs.js"></script>
+    <link href="libs/remark-css/default.css" rel="stylesheet" />
+    <link href="libs/remark-css/metropolis.css" rel="stylesheet" />
+    <link href="libs/remark-css/metropolis-fonts.css" rel="stylesheet" />
+    <link rel="stylesheet" href="scrollable.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# MFRE Data Analytics
+
+---
+
+
+&lt;style type="text/css"&gt;
+# CSS for including pauses in printed PDF output (see bottom of lecture)
+@media print {
+  .has-continuation {
+    display: block !important;
+  }
+}
+
+.remark-slide-scaler {
+    overflow-y: auto;
+}
+&lt;/style&gt;
+
+
+
+# R programming
+
+
+```r
+df_gdp %&gt;% 
+  group_by(geo_short) %&gt;% 
+  summarize(gdp_plot = mean(gdp/1e9)) %&gt;% 
+  ggplot(aes(geo_short, gdp_plot, fill = geo_short, label = geo_short)) +
+  geom_col() +
+  geom_text(vjust = -0.1, size = 3) +
+  scale_fill_viridis_d() +
+  scale_y_continuous(labels=scales::dollar) + 
+  theme_tufte(base_size = 10, base_family = "Roboto") +
+  theme(legend.position = "none",
+        axis.text.x = element_blank(),
+        axis.ticks = element_blank()) +
+  labs(title = "Average GDP by province", x = "", y = "GDP (2012$ billions)")
+```
+
+---
+
+# Data Visualization 
+
+.center[![](pics/gdp_static.png)]
+
+---
+
+# Animated graphs
+
+.center[![](pics/gdp_per_capita_ranked.gif)]
+
+
+---
+
+# Python
+
+.pull-left[
+
+```python
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+#import CPI data
+df = pd.read_excel('/Dairy.xlsx', 
+index_col='Month', parse_dates=True)
+df = df.iloc[:,[1,2]]
+df
+
+#plot CPI data
+fig, ax = plt.subplots()
+df.plot(ax=ax)
+plt.show
+```
+]
+
+.pull-right[![](pics/dairycpi.png)]
+
+---
+
+# SQL
+
+
+```r
+import psycopg2
+
+# establish a connection
+
+connection = psycopg2.connect(host="mfre.servers.mongodirector.com", 
+                        port="5432", 
+                        user="sgpostgres", 
+                        database="postgres",
+                        password="1234")
+
+# calculate average food security days by cluster
+cursor.execute("""select c.name, avg(cchs.hwtdgbmi)
+from clusters c, cchs
+where c.adm_rno = cchs.adm_rno
+and cchs.hwtdgbmi &lt; 999
+group by c.name""")
+
+for x in cursor.fetchall():
+  print(x)
+```
+
+---
+
+# MongoDB
+
+- Compare ratings of businesses in Vancouver and Portland using Yelp data
+
+
+```r
+yvr_pdx = db.businesses.aggregate([
+    {'$match': {
+      '$or': [
+        {'city': 'Vancouver', 
+          'state': 'BC'}, 
+        {'city': 'Portland',
+          'state': 'OR'}]}
+    }, {
+      '$group': {
+      '_id': '$city',
+        'averageRating': {
+          '$avg': '$stars'}}}])
+```
+
+![](pics/mongodb.png)
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
