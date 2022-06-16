@@ -33,41 +33,97 @@ class: center, middle, inverse, title-slide
 
 
 
-# R programming
+# R for Price Analysis
+
+- Comparing hedge and no-hedge profits for a Mid-Iowa cooperative in the corn market
+
+.pull-left[
+
+```r
+# load library
+library(ggplot2)
+
+# create overlay histogram of hedge 
+# and no hedge profits
+
+ggplot(profits) +
+  # long spot profit dist
+  geom_histogram(aes(x= long_corn), 
+                 fill = "red") +
+  # short hedge profit dist
+  geom_histogram(aes(x = short_hedge), 
+                 fill = "blue") + 
+  xlab("Profits, $/bu") + 
+  labs(caption = "red = long spot, 
+       blue = short hedge")
+```
+]
+
+.pull-right[
+.center[![](pics/hedge.png)]
+]
+
+
+---
+# R for Time Series
+
+- Plot Impulse Response Functions (IRF) to trace impact of shocking one variable on the dynamics of other variables in the system
 
 
 ```r
-df_gdp %&gt;% 
-  group_by(geo_short) %&gt;% 
-  summarize(gdp_plot = mean(gdp/1e9)) %&gt;% 
-  ggplot(aes(geo_short, gdp_plot, fill = geo_short, label = geo_short)) +
-  geom_col() +
-  geom_text(vjust = -0.1, size = 3) +
-  scale_fill_viridis_d() +
-  scale_y_continuous(labels=scales::dollar) + 
-  theme_tufte(base_size = 10, base_family = "Roboto") +
-  theme(legend.position = "none",
-        axis.text.x = element_blank(),
-        axis.ticks = element_blank()) +
-  labs(title = "Average GDP by province", x = "", y = "GDP (2012$ billions)")
+# Estimate VAR model
+var_veg &lt;- VAR(vegoils_real, p = 3, type = c("const"))
+
+# IRF
+plot(irf(model1, impulse = c("lnsoyr"), 
+         response = c("lnsoyr", "lnrapeseedr", "lnpalmr"), 
+         n.ahead = 10, boot = TRUE, runs = 100, ci = 0.95))
 ```
 
----
-
-# Data Visualization 
-
-.center[![](pics/gdp_static.png)]
+![](pics/irf.png)
 
 ---
+# Excel and Power Query for Finance
 
-# Animated graphs
+- Updating financial ratio dashboard with new data
 
+&lt;img src="pics/refreshing.gif" width="60%" style="display: block; margin: auto;" /&gt;
+
+---
+# R for Data Visualization
+
+- Create an animated graph that shows how GDP/capita changed over time by province
+
+.pull-left[
+
+```r
+# load package
+library(gganimate)
+
+# create animated plot
+animate(gdp_pc, 
+        nframes = 100, 
+        fps = 5, 
+        end_pause = 20) 
+```
+]
+
+.pull-right[
 .center[![](pics/gdp_per_capita_ranked.gif)]
+]
 
+---
+# Tableau for Data Visualization
+
+- Presenting analysis of factors affecting female employment rate in agriculture
+
+&lt;img src="pics/tableau.gif" width="60%" style="display: block; margin: auto;" /&gt;
 
 ---
 
-# Python
+# Python for Data Analysis
+
+- Load in Dairy CPI and plot data to observe trends 
 
 .pull-left[
 
@@ -89,23 +145,25 @@ plt.show
 ```
 ]
 
-.pull-right[![](pics/dairycpi.png)]
+.pull-right[
+.center[![](pics/dairycpi.png)]
+]
 
 ---
 
-# SQL
+# Python and SQL
+
+- Connect to a relational database and perform basic calculations
 
 
 ```r
+# import library
 import psycopg2
 
 # establish a connection
-
 connection = psycopg2.connect(host="mfre.servers.mongodirector.com", 
-                        port="5432", 
-                        user="sgpostgres", 
-                        database="postgres",
-                        password="1234")
+                              port="5432", user="sgpostgres", 
+                              database="postgres", password="1234")
 
 # calculate average food security days by cluster
 cursor.execute("""select c.name, avg(cchs.hwtdgbmi)
@@ -113,16 +171,15 @@ from clusters c, cchs
 where c.adm_rno = cchs.adm_rno
 and cchs.hwtdgbmi &lt; 999
 group by c.name""")
-
-for x in cursor.fetchall():
-  print(x)
 ```
+
+.center[![](pics/sql.png)]
 
 ---
 
-# MongoDB
+# Python and MongoDB
 
-- Compare ratings of businesses in Vancouver and Portland using Yelp data
+- Connect to a non-relational database and compare business ratings
 
 
 ```r
