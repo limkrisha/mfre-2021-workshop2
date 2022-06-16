@@ -40,6 +40,25 @@ library(hrbrthemes)
 library(fontawesome)
 ```
 
+# R for Survey Data Analysis
+
+- Explore summary statistics of key variables 
+
+```{r, eval = F}
+beef %>%
+    select(Age, HhSize, 
+           BeefConsumption, ChickenConsumption, 
+           FishConsumption, WtpAmount, 
+           IncomePerCapita) %>%
+    datasummary_skim()
+```
+
+```{r, echo = FALSE, out.width = "60%"}
+knitr::include_graphics("pics/sumstats.png")
+```
+
+---
+
 # R for Price Analysis
 
 - Comparing hedge and no-hedge profits for a Mid-Iowa cooperative in the corn market
@@ -68,7 +87,6 @@ ggplot(profits) +
 .pull-right[
 .center[![](pics/hedge.png)]
 ]
-
 
 ---
 # R for Time Series

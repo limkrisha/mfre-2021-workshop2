@@ -33,6 +33,24 @@ class: center, middle, inverse, title-slide
 
 
 
+# R for Survey Data Analysis
+
+- Explore summary statistics of key variables 
+
+
+```r
+beef %&gt;%
+    select(Age, HhSize, 
+           BeefConsumption, ChickenConsumption, 
+           FishConsumption, WtpAmount, 
+           IncomePerCapita) %&gt;%
+    datasummary_skim()
+```
+
+&lt;img src="pics/sumstats.png" width="60%" style="display: block; margin: auto;" /&gt;
+
+---
+
 # R for Price Analysis
 
 - Comparing hedge and no-hedge profits for a Mid-Iowa cooperative in the corn market
@@ -62,7 +80,6 @@ ggplot(profits) +
 .pull-right[
 .center[![](pics/hedge.png)]
 ]
-
 
 ---
 # R for Time Series
