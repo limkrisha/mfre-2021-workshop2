@@ -111,7 +111,7 @@ plot(irf(model1, impulse = c("lnsoyr"),
 - Updating financial ratio dashboard with new data
 
 ```{r, echo = FALSE, out.width = "60%"}
-knitr::include_graphics("pics/refreshing.gif")
+knitr::include_graphics("pics/dashboard_charts_new.gif")
 ```
 
 ---
